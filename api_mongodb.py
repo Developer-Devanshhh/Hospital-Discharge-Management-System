@@ -139,6 +139,8 @@ async def refresh_health_news_periodically():
         except Exception as e:
             print(f"⚠️ Auto-refresh failed: {e}")
 
+
+
 # Fetch initial health news data on startup (so it's ready immediately)
 async def fetch_initial_health_news():
     """Fetch health news once on startup"""
@@ -682,6 +684,69 @@ async def update_user_profile(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
+# ==================== DISCHARGE SIMPLIFICATION ENDPOINT ====================
+
+@app.post("/api/discharge/simplify")
+async def simplify_discharge(
+    file: UploadFile = File(None),
+    text: str = Form(None),
+    current_user: dict = Depends(get_current_user),
+    request: Request = None
+):
+    """
+    Simplifies discharge instructions from a file or text.
+    Logs the action to the BLOCKCHAIN for audit trail.
+    """
+    try:
+        user_id = current_user["_id"]
+        logger.info(f"🏥 Discharge simplification requested by user: {user_id}")
+
+        result = None
+        
+        # 1. Process Input
+        if file:
+            # Save temporary file
+            temp_filename = f"temp_{user_id}_{file.filename}"
+            with open(temp_filename, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            
+            try:
+                # Process file
+                result = await workflow.process_file(temp_filename)
+            finally:
+                # Cleanup
+                if os.path.exists(temp_filename):
+                    os.remove(temp_filename)
+                    
+        elif text:
+            # Process raw text
+            result = await workflow.process_with_evaluation(text)
+            
+        else:
+            raise HTTPException(status_code=400, detail="Either file or text is required")
+
+        if not result or result.get("status") == "failed":
+            raise HTTPException(status_code=500, detail=result.get("error", "Processing failed"))
+
+        # 2. Blockchain Audit Log
+        # We log that a discharge summary was processed and simplified
+        await log_audit(
+            user_id=user_id,
+            action="DISCHARGE_SIMPLIFICATION", 
+            resource_type="discharge_summary",
+            resource_id=None, # No persistent ID for the document itself yet
+            request=request
+        )
+        
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Discharge simplification error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ==================== TTS UTILITIES ====================
 

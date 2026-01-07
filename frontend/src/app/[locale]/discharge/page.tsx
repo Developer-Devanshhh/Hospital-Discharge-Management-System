@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from 'react';
-import { Upload, FileText, AlertTriangle, Calendar, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { Upload, FileText, AlertTriangle, Calendar, Volume2, CheckCircle2, Copy, Download, ShieldCheck, Activity } from 'lucide-react';
+import MetricCard from '@/components/discharge/MetricCard';
+import ActionTimeline from '@/components/discharge/ActionTimeline';
 
 export default function DischargePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -10,14 +11,18 @@ export default function DischargePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [speaking, setSpeaking] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
+  // File Upload Handler
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
-      setText(""); // Clear text if file selected
+      setText("");
     }
   };
 
+  // Submit Handler
   const handleSubmit = async () => {
     if (!file && !text) {
       setError("Please provide a file or text.");
@@ -58,246 +63,313 @@ export default function DischargePage() {
     }
   };
 
+  // Text-to-Speech Handler
+  const handleReadAloud = async () => {
+    if (!result || !result.simplified_summary) return;
+
+    if (speaking && audioUrl) {
+      const audio = document.getElementById('tts-audio') as HTMLAudioElement;
+      if (audio) {
+        audio.pause();
+        setSpeaking(false);
+      }
+      return;
+    }
+
+    setSpeaking(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch("/api/tts", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          text: result.simplified_summary,
+          language_code: "en-IN" // Default to Indian English context
+        }),
+      });
+
+      if (!response.ok) throw new Error("TTS failed");
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setAudioUrl(url);
+
+      const audio = new Audio(url);
+      audio.id = 'tts-audio';
+      audio.onended = () => setSpeaking(false);
+      audio.play();
+    } catch (err) {
+      console.error("TTS Error:", err);
+      setSpeaking(false);
+    }
+  };
+
+  // Download ICS
+  const handleDownloadCalendar = () => {
+    if (!result?.ics_content) return;
+
+    const blob = new Blob([result.ics_content], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'recovery_schedule.ics';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <div className="min-h-screen bg-[#FDFCF8] p-4 md:p-8 font-sans text-stone-800">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#FDFCF8] font-sans text-stone-800 pb-20">
 
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-serif font-bold text-primary-dark">Discharge Simplifier</h1>
-          <p className="text-stone-600">Upload your hospital discharge summary to get a simple, day-by-day action plan.</p>
+      {/* Hero Header */}
+      <div className="bg-[#f0f9f9] border-b border-teal-100 py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center space-y-4">
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-teal-950 tracking-tight">
+            Simplify Your Hospital Discharge
+          </h1>
+          <p className="text-lg md:text-xl text-teal-800/80 max-w-2xl mx-auto leading-relaxed">
+            Understand your care plan instantly. We translate complex medical jargon into clear, actionable steps for a safer recovery.
+          </p>
         </div>
+      </div>
 
+      <div className="max-w-4xl mx-auto px-4 -mt-8">
         {/* Input Section */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
-          <div className="space-y-4">
-            <div className="border-2 border-dashed border-stone-300 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer relative">
-              <input
-                type="file"
-                accept=".pdf"
-                onChange={handleFileUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              <Upload className="mx-auto h-12 w-12 text-stone-400 mb-2" />
-              <p className="font-medium text-stone-700">{file ? file.name : "Drop PDF here or click to upload"}</p>
-            </div>
+        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-teal-50">
+          <div className="space-y-6">
 
-            <div className="relative flex items-center gap-2 my-4">
-              <div className="h-px bg-stone-200 flex-1"></div>
-              <span className="text-sm text-stone-400 font-medium">OR PASTE TEXT</span>
-              <div className="h-px bg-stone-200 flex-1"></div>
+            {/* File Upload Zone */}
+            <label className={`
+              border-2 border-dashed rounded-xl p-10 text-center transition-all cursor-pointer block group
+              ${file ? 'border-teal-500 bg-teal-50' : 'border-stone-300 hover:border-teal-400 hover:bg-stone-50'}
+            `}>
+              <input type="file" accept=".pdf,.txt,.docx" onChange={handleFileUpload} className="hidden" />
+              <div className="flex flex-col items-center gap-4">
+                <div className={`p-4 rounded-full ${file ? 'bg-teal-100 text-teal-600' : 'bg-stone-100 text-stone-400 group-hover:text-teal-500 transition-colors'}`}>
+                  <Upload className="w-8 h-8" />
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-stone-700">
+                    {file ? file.name : "Upload Discharge Summary PDF"}
+                  </p>
+                  {!file && <p className="text-stone-500 mt-1">or drag and drop your file here</p>}
+                </div>
+              </div>
+            </label>
+
+            {/* Manual Text Option */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-white px-3 text-sm text-gray-500 uppercase tracking-widest">Or paste text</span>
+              </div>
             </div>
 
             <textarea
-              className="w-full border border-stone-300 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-              rows={4}
-              placeholder="Paste discharge text here..."
+              className="w-full border border-stone-200 rounded-xl p-4 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all placeholder:text-stone-400 text-base"
+              rows={3}
+              placeholder="Paste the text from your discharge papers here..."
               value={text}
               onChange={(e) => setText(e.target.value)}
               disabled={!!file}
             ></textarea>
 
+            {/* Action Button */}
             <button
               onClick={handleSubmit}
-              disabled={loading}
-              className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+              disabled={loading || (!file && !text)}
+              className={`
+                w-full py-4 rounded-xl font-bold text-lg shadow-md transition-all flex items-center justify-center gap-3
+                ${loading || (!file && !text)
+                  ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                  : 'bg-teal-600 text-white hover:bg-teal-700 hover:shadow-lg hover:-translate-y-0.5'}
+              `}
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Simplifying...
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
+                  Analyzing & Simplifying...
                 </>
               ) : (
                 <>
                   <FileText className="w-5 h-5" />
-                  Generate Action Plan
+                  Generate My Recovery Plan
                 </>
               )}
             </button>
 
             {error && (
-              <div className="p-3 bg-red-50 text-red-700 rounded-lg flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />
-                {error}
+              <div className="p-4 bg-red-50 text-red-700 rounded-xl flex items-center gap-3 border border-red-100 animate-in slide-in-from-top-2">
+                <AlertTriangle className="w-5 h-5 shrink-0" />
+                <p>{error}</p>
               </div>
             )}
+
+            {/* Blockchain Badge */}
+            <div className="flex justify-center items-center gap-2 text-xs text-stone-400 pt-2">
+              <ShieldCheck className="w-3 h-3" />
+              <span>Secured & Audited via Blockchain</span>
+            </div>
           </div>
         </div>
 
         {/* Results Section */}
         {result && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="mt-12 space-y-12 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-700">
 
-            {/* Danger Signs Alert */}
-            {result.danger_signs && result.danger_signs.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-                <h3 className="text-xl font-bold text-red-700 flex items-center gap-2 mb-4">
-                  <AlertTriangle className="w-6 h-6" />
-                  Ref Flags - Call Doctor Immediately
-                </h3>
-                <ul className="space-y-2">
-                  {result.danger_signs.map((sign: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-red-800 font-medium">
-                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-600 shrink-0"></span>
-                      {sign}
-                    </li>
-                  ))}
-                </ul>
+            {/* 1. Evaluation Cards */}
+            {result.evaluation && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <MetricCard
+                  label="Readability"
+                  value={result.evaluation.readability_score?.toFixed(1) || "N/A"}
+                  subtext="Grade Level"
+                  color="blue"
+                  icon={<FileText className="w-4 h-4" />}
+                />
+                <MetricCard
+                  label="Safety Check"
+                  value={result.evaluation.safety_warnings_present ? "Pass" : "Review"}
+                  subtext="Warnings Found"
+                  color={result.evaluation.safety_warnings_present ? "green" : "amber"}
+                  icon={<ShieldCheck className="w-4 h-4" />}
+                />
+                <MetricCard
+                  label="Completeness"
+                  value={Object.values(result.evaluation.completeness).filter(Boolean).length}
+                  subtext="Checks Passed"
+                  color="stone"
+                  icon={<CheckCircle2 className="w-4 h-4" />}
+                />
+                <MetricCard
+                  label="Blockchain"
+                  value="Verified"
+                  subtext="Audit Logged"
+                  color="amber" // Gold for premium/blockchain
+                  icon={<Activity className="w-4 h-4" />}
+                />
               </div>
             )}
 
-            {/* Simplified Summary */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
-              <h2 className="text-2xl font-serif font-bold text-stone-800 mb-4">Summary</h2>
-              <div className="bg-blue-50 p-4 rounded-lg text-stone-800 leading-relaxed text-lg">
+            {/* 2. Critical Alerts */}
+            {result.danger_signs && result.danger_signs.length > 0 && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-6 md:p-8 rounded-r-xl shadow-sm">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-white rounded-full text-red-500 shadow-sm shrink-0">
+                    <AlertTriangle className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-red-900 mb-2">Warning Signs</h3>
+                    <p className="text-red-800 mb-4 font-medium">If you experience any of these symptoms, call your doctor or 911 immediately:</p>
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {result.danger_signs.map((sign: string, i: number) => (
+                        <div key={i} className="flex items-center gap-2 bg-white/60 p-2 rounded text-red-900 font-semibold border border-red-100">
+                          <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                          {sign}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. Simplified Summary with Voice */}
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-stone-200">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-serif font-bold text-stone-900">Summary</h2>
+                <button
+                  onClick={handleReadAloud}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all ${speaking ? 'bg-teal-100 text-teal-700 animate-pulse' : 'bg-stone-100 text-stone-600 hover:bg-teal-50 hover:text-teal-600'}`}
+                >
+                  <Volume2 className="w-4 h-4" />
+                  {speaking ? "Listening..." : "Read Aloud"}
+                </button>
+              </div>
+              <div className="prose prose-lg text-stone-700 leading-relaxed font-normal">
                 {result.simplified_summary}
               </div>
             </div>
 
-            {/* Action Plan Timeline */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
-              <h2 className="text-2xl font-serif font-bold text-stone-800 mb-6 flex items-center gap-2">
-                <Calendar className="w-6 h-6 text-primary" />
-                Action Plan
-              </h2>
-
-              <div className="space-y-8 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-stone-200">
-                {result.action_plan?.map((day: any, i: number) => (
-                  <div key={i} className="relative pl-12">
-                    <div className="absolute left-1.5 top-1.5 w-5 h-5 rounded-full border-4 border-white bg-primary shadow-sm"></div>
-                    <h3 className="text-lg font-bold text-stone-800 mb-2">{day.day}</h3>
-                    <div className="space-y-3">
-                      {day.tasks.map((task: string, j: number) => (
-                        <div key={j} className="flex items-start gap-3 bg-stone-50 p-3 rounded-lg border border-stone-100">
-                          <div className="w-5 h-5 rounded border-2 border-stone-300 mt-0.5" />
-                          <span className="text-stone-700 font-medium">{task}</span>
-                        </div>
-                      ))}
-                      {day.medications && day.medications.length > 0 && (
-                        <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 mt-2">
-                          <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-1">Medications</p>
-                          <ul className="list-disc list-inside text-sm text-blue-900">
-                            {day.medications.map((med: string, k: number) => (
-                              <li key={k}>{med}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
+            {/* 4. Action Plan Timeline */}
+            <div className="bg-[#fffefe] p-8 rounded-2xl shadow-sm border border-stone-200">
+              <div className="flex flex-col md:flex-row justify-between md:items-center mb-8 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2bg-teal-100 rounded-lg text-teal-700">
+                    <Calendar className="w-8 h-8 text-teal-600" />
                   </div>
-                ))}
+                  <div>
+                    <h2 className="text-2xl font-serif font-bold text-stone-900">Recovery Action Plan</h2>
+                    <p className="text-stone-500">Your day-by-day guide to recovery</p>
+                  </div>
+                </div>
+
+                {result.ics_content && (
+                  <button
+                    onClick={handleDownloadCalendar}
+                    className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-5 py-3 rounded-xl transition-all shadow-md active:scale-95"
+                  >
+                    <Download className="w-4 h-4" />
+                    Add to Calendar
+                  </button>
+                )}
               </div>
+
+              <ActionTimeline plan={result.action_plan || []} />
             </div>
 
-            {/* Follow Up */}
-            {result.follow_up_schedule && result.follow_up_schedule.length > 0 && (
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
-                <h2 className="text-2xl font-serif font-bold text-stone-800 mb-4">Follow-Up Appointments</h2>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {result.follow_up_schedule.map((appt: any, i: number) => (
-                    <div key={i} className="p-4 bg-amber-50 rounded-lg border border-amber-100">
-                      <p className="font-bold text-amber-900 text-lg">{appt.specialist}</p>
-                      <p className="text-amber-800 font-medium mt-1">{appt.when}</p>
-                      <p className="text-amber-700 text-sm mt-2">{appt.purpose}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Lifestyle, Wound Care, & Restrictions Grid */}
+            {/* 5. Additional Info Grid */}
             <div className="grid md:grid-cols-2 gap-6">
-
               {/* Lifestyle Changes */}
-              {result.lifestyle_changes && (result.lifestyle_changes.length > 0 || typeof result.lifestyle_changes === 'string') && (
-                <div className="bg-green-50/50 p-6 rounded-xl border border-green-100">
-                  <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
-                    <span className="p-1.5 bg-green-100 rounded-lg"><CheckCircle2 className="w-5 h-5 text-green-600" /></span>
-                    Lifestyle Changes
+              {result.lifestyle_changes && (
+                <div className="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100">
+                  <h3 className="text-xl font-bold text-emerald-900 mb-4 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    Healthy Habits
                   </h3>
-                  <div className="prose prose-sm prose-green text-green-900">
+                  <div className="text-emerald-800/90 leading-relaxed">
                     {Array.isArray(result.lifestyle_changes) ? (
-                      <ul className="space-y-2 list-none pl-0">
+                      <ul className="space-y-2">
                         {result.lifestyle_changes.map((item: string, i: number) => (
                           <li key={i} className="flex gap-2">
-                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
+                            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                             {item}
                           </li>
                         ))}
                       </ul>
-                    ) : (
-                      <p>{result.lifestyle_changes}</p>
-                    )}
+                    ) : <p>{result.lifestyle_changes}</p>}
                   </div>
                 </div>
               )}
 
-              {/* Activity Restrictions */}
-              {result.activity_restrictions && (result.activity_restrictions.length > 0 || typeof result.activity_restrictions === 'string') && (
-                <div className="bg-orange-50/50 p-6 rounded-xl border border-orange-100">
-                  <h3 className="text-xl font-bold text-orange-800 mb-4 flex items-center gap-2">
-                    <span className="p-1.5 bg-orange-100 rounded-lg"><AlertTriangle className="w-5 h-5 text-orange-600" /></span>
-                    Do NOT Do This
+              {/* Restrictions */}
+              {result.activity_restrictions && (
+                <div className="bg-amber-50/50 p-6 rounded-2xl border border-amber-100">
+                  <h3 className="text-xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    Important Restrictions
                   </h3>
-                  <div className="prose prose-sm prose-orange text-orange-900">
+                  <div className="text-amber-800/90 leading-relaxed">
                     {Array.isArray(result.activity_restrictions) ? (
-                      <ul className="space-y-2 list-none pl-0">
+                      <ul className="space-y-2">
                         {result.activity_restrictions.map((item: string, i: number) => (
                           <li key={i} className="flex gap-2">
-                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
+                            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                             {item}
                           </li>
                         ))}
                       </ul>
-                    ) : (
-                      <p>{result.activity_restrictions}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Wound Care (Full Width if present) */}
-              {result.wound_care && (result.wound_care.length > 0 || typeof result.wound_care === 'string') && (
-                <div className="md:col-span-2 bg-stone-50 p-6 rounded-xl border border-stone-200">
-                  <h3 className="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
-                    <Upload className="w-5 h-5 text-stone-600 rotate-90" /> {/* Simulate Bandage/Shield */}
-                    Wound Care & Hygiene
-                  </h3>
-                  <div className="text-stone-700 leading-relaxed">
-                    {Array.isArray(result.wound_care) ? (
-                      <ul className="list-disc list-inside space-y-1">
-                        {result.wound_care.map((item: string, i: number) => (
-                          <li key={i}>{item}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>{result.wound_care}</p>
-                    )}
+                    ) : <p>{result.activity_restrictions}</p>}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Citations / Resources */}
-            {result.citations && result.citations.length > 0 && (
-              <div className="mt-8 pt-8 border-t border-stone-200">
-                <h3 className="text-sm font-bold text-stone-500 uppercase tracking-widest mb-4">Trusted Medical Resources</h3>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {result.citations.map((cite: any, i: number) => (
-                    <a
-                      key={i}
-                      href={cite.url || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between p-4 bg-white border border-stone-200 rounded-lg hover:border-primary/50 hover:shadow-sm transition-all group"
-                    >
-                      <span className="font-medium text-stone-700 group-hover:text-primary transition-colors">{cite.title || cite}</span>
-                      <FileText className="w-4 h-4 text-stone-400 group-hover:text-primary transition-colors" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
