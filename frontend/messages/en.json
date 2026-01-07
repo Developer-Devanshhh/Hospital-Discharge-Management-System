@@ -7,12 +7,12 @@
         "signOut": "Sign Out"
     },
     "Header": {
-        "title": "Holistic Assistant",
-        "subtitle": "Ayurveda & Yoga Intelligence"
+        "title": "Discharge Assistant",
+        "subtitle": "Healthcare Discharge Instruction Simplifier"
     },
     "Chat": {
-        "greetingTitle": "Namaste! 🙏",
-        "greetingBody": "I am DeepShiva, your holistic health companion. How can I support your well-being today?",
+        "greetingTitle": "Hello!",
+        "greetingBody": "I am your AI Healthcare Assistant. Upload a discharge summary or ask me health questions.",
         "inputPlaceholder": "Describe your symptoms or ask a health question...",
         "stopRecording": "Stop Recording",
         "speakQuery": "Speak your query",
@@ -20,22 +20,22 @@
         "sessionExpired": "Session expired. Please log in again.",
         "errorConnection": "I apologize, but I am having trouble connecting right now. Please try again.",
         "emergencyWarning": "Emergency Warning:",
-        "yogaRecommendations": "Yoga Recommendations",
-        "curatedVideos": "Curated Videos for You",
+        "yogaRecommendations": "Recovery Recommendations",
+        "curatedVideos": "Patient Education Videos",
         "watch": "Watch",
         "previousResponseLoading": "Previous Response Still Loading",
         "conversationsProcessing": "conversation(s) are still processing. You can navigate freely, and responses will be saved automatically.",
-        "swastha": "Swastha",
-        "healthQuote": "\"Health is not just the absence of disease, but the balance of mind, body, and spirit.\"",
-        "migraineRemedy": "Remedies for migraine?",
-        "backPainYoga": "Yoga for back pain",
-        "pittDoshaDiet": "Pitt dosha diet",
-        "sleepMeditation": "Meditation for sleep",
+        "swastha": "Medical Assistant",
+        "healthQuote": "\"Simplifying healthcare for a better recovery journey.\"",
+        "migraineRemedy": "Explain my discharge summary",
+        "backPainYoga": "What are these medications?",
+        "pittDoshaDiet": "Warning signs to watch for",
+        "sleepMeditation": "Find nearby hospitals",
         "pauseVoice": "Pause Voice",
         "listen": "Listen",
-        "consultingKnowledgeBase": "Consulting Ayurvedic Knowledge Base...",
-        "askPlaceholder": "Ask about symptoms, doshas, or yoga...",
-        "disclaimer": "Ayurveda supports, it does not replace. In emergencies, seek professional medical help immediately.",
+        "consultingKnowledgeBase": "Consulting Medical Knowledge Base...",
+        "askPlaceholder": "Ask about your recovery or symptoms...",
+        "disclaimer": "This is an AI assistant. In emergencies, seek professional medical help immediately.",
         "tellMeMoreNews": "Tell me more about this health news:",
         "newsPrompt": "Title: \"{title}\"\nSource: {source}\nSummary: {description}\nArticle URL: {url}\n\nPlease provide:\n1. A detailed explanation of what this means\n2. Who is affected and how serious is it\n3. What precautions should people take\n4. Any relevant medical context"
     },
@@ -48,8 +48,8 @@
         "footer": "Real-time updates from trusted sources"
     },
     "Login": {
-        "welcome": "Welcome to DeepShiva",
-        "subtitle": "Your Ayurvedic path to wellness begins here.",
+        "welcome": "Welcome to Health Assistant",
+        "subtitle": "Your path to simplified recovery begins here.",
         "email": "Email Address",
         "password": "Password",
         "signIn": "Sign In",
@@ -60,7 +60,7 @@
     },
     "Profile": {
         "title": "My Profile",
-        "memberLabel": "Holistic Wellness Member",
+        "memberLabel": "Healthcare Member",
         "personalInfo": "Personal Information",
         "editDetails": "Edit Details",
         "cancel": "Cancel",
@@ -99,9 +99,9 @@
     },
     "Onboarding": {
         "qAge": "How old are you?",
-        "subAge": "This helps us tailor health advice appropriate for your life stage.",
+        "subAge": "This helps us provide age-appropriate health advice.",
         "qGender": "What is your gender?",
-        "subGender": "Biological factors influence Ayurvedic constitution (Prakriti).",
+        "subGender": "Biological factors influence health parameters.",
         "qConditions": "Do you have any existing health conditions?",
         "subConditions": "e.g., Diabetes, Hypertension, Asthma (or leave blank if none)",
         "phConditions": "List any chronic conditions...",
@@ -128,8 +128,8 @@
         "preferNotToSay": "Prefer not to say"
     },
     "Signup": {
-        "title": "Join DeepShiva",
-        "subtitle": "Begin your holistic wellness journey today.",
+        "title": "Join Health Assistant",
+        "subtitle": "Begin your simplified recovery journey today.",
         "fullName": "Full Name",
         "email": "Email Address",
         "password": "Password",

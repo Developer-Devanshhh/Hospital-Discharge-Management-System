@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Upload, FileText, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { getValidToken } from '../lib/firebase-client';
 
 interface UploadedDocument {
   id: string;
@@ -31,11 +32,13 @@ export default function DocumentUploader() {
   const fetchDocuments = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = await getValidToken();
+      if (!token) return;
+
       const response = await fetch('/api/documents', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setDocuments(data.documents || []);
@@ -68,14 +71,14 @@ export default function DocumentUploader() {
     setSuccess(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = await getValidToken();
       if (!token) {
         setError('Not authenticated. Please log in again.');
         return;
       }
 
       console.log('Uploading file:', file.name, 'Size:', (file.size / 1024).toFixed(2), 'KB');
-      
+
       const formData = new FormData();
       formData.append('file', file);
 
@@ -90,23 +93,23 @@ export default function DocumentUploader() {
       if (response.ok) {
         const result = await response.json();
         console.log('Upload success:', result);
-        
+
         let successMsg = `✅ ${file.name} uploaded successfully`;
-        
+
         // Add profile update notice
         if (result.profile_updated) {
           successMsg += ' | 📋 Profile updated with new medical data';
         } else if (result.ownership_status === 'different_patient') {
           successMsg += ' | ⚠️ Document appears to belong to a different patient';
         }
-        
+
         setSuccess(successMsg);
         await fetchDocuments();
       } else {
         console.log('Upload response status:', response.status);
-        
+
         let errorMsg = 'Upload failed';
-        
+
         // Try to parse error response
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
@@ -125,7 +128,7 @@ export default function DocumentUploader() {
             errorMsg = textError || `Upload failed (${response.status})`;
           }
         }
-        
+
         console.error('Upload failed:', response.status, errorMsg);
         setError(errorMsg);
       }
@@ -142,14 +145,14 @@ export default function DocumentUploader() {
     if (!confirm('Delete this document?')) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = await getValidToken();
       const response = await fetch(`/api/documents/${docId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
         setSuccess('Document deleted');
         setError(null);

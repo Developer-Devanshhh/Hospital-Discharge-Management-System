@@ -35,12 +35,11 @@ type Session = {
 interface ChatResponse {
   intent?: string;
   output?: string | { message: string; emergency?: boolean };
-  yoga_videos?: Array<{ title: string; url: string; thumbnail?: string }>;
-  yoga_recommendations?: string;
+
 }
 
 const formatResponse = (response: ChatResponse, t: any): React.ReactNode => {
-  const { intent, output, yoga_videos, yoga_recommendations } = response;
+  const { intent, output } = response;
 
   const renderContent = (content: string | { message: string; emergency?: boolean } | unknown) => {
     if (typeof content === 'string') {
@@ -97,57 +96,7 @@ const formatResponse = (response: ChatResponse, t: any): React.ReactNode => {
         </div>
       )}
 
-      {yoga_recommendations && (
-        <div className="mt-4 p-5 bg-[#F2E8CF]/30 rounded-xl border border-[#F2E8CF] shadow-sm">
-          <h4 className="font-serif text-primary font-bold mb-3 flex items-center gap-2 text-lg">
-            <Leaf className="w-5 h-5" />
-            {t('yogaRecommendations')}
-          </h4>
-          <div className="text-stone-700">
-            {renderContent(yoga_recommendations)}
-          </div>
-        </div>
-      )}
 
-
-      {yoga_videos && Array.isArray(yoga_videos) && yoga_videos.length > 0 && (
-        <div className="mt-4">
-          <h4 className="font-serif text-stone-800 font-bold mb-3 flex items-center gap-2">
-            <Youtube className="w-5 h-5 text-red-500" />
-            {t('curatedVideos')}
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {yoga_videos.map((video, idx: number) => (
-              <a
-                key={idx}
-                href={video.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group block overflow-hidden bg-white rounded-xl shadow-sm hover:shadow-organic transition-all border border-stone-200 hover:border-primary-light/30"
-              >
-                {video.thumbnail && (
-                  <div className="relative overflow-hidden aspect-video">
-                    <img
-                      src={video.thumbnail}
-                      alt={video.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                    <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">
-                      {t('watch')}
-                    </div>
-                  </div>
-                )}
-                <div className="p-3">
-                  <p className="text-sm font-semibold text-stone-800 line-clamp-2 group-hover:text-primary transition-colors">
-                    {video.title}
-                  </p>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -868,10 +817,24 @@ export default function HealthcareChat() {
 
       } catch (err) {
         console.error("Hospital locator error:", err);
+        const fallbackUrl = `https://www.google.com/maps/search/hospitals+near+me/@${latitude},${longitude},13z`;
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: "Sorry, I couldn't locate nearby hospitals at the moment. Please call 112 for emergency.",
-          rawContent: "Error locating hospitals."
+          content: (
+            <div className="space-y-3">
+              <p>I couldn't retrieve the list of hospitals directly, but you can find them here:</p>
+              <a
+                href={fallbackUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-3 rounded-lg font-bold hover:bg-red-700 transition-colors"
+              >
+                <MapPin className="w-5 h-5" />
+                View Nearby Hospitals on Google Maps
+              </a>
+            </div>
+          ),
+          rawContent: "Error locating hospitals. Please check Google Maps."
         }]);
       } finally {
         setIsLoading(false);
@@ -998,9 +961,9 @@ export default function HealthcareChat() {
           <div className="p-6 flex items-center justify-between border-b border-white/10">
             <div className="flex items-center gap-3">
               <div className="bg-white/10 p-2 rounded-lg">
-                <Leaf className="w-5 h-5 text-emerald-200" />
+                <Activity className="w-5 h-5 text-emerald-200" />
               </div>
-              <span className="font-serif font-bold text-xl text-[#F2E8CF]">DeepShiva</span>
+              <span className="font-serif font-bold text-xl text-[#F2E8CF]">Discharge Agent</span>
             </div>
             <button onClick={() => setIsMobileSidebarOpen(false)} className="md:hidden text-white/70 hover:text-white">
               <X className="w-6 h-6" />
@@ -1186,7 +1149,7 @@ export default function HealthcareChat() {
               messages.length === 0 && !currentSessionId && (
                 <div className="flex flex-col items-center justify-center h-[80%] text-center space-y-6 animate-in fade-in duration-700">
                   <div className="w-24 h-24 bg-[#E0E5D9] rounded-full flex items-center justify-center mb-4 shadow-inner">
-                    <Leaf className="w-12 h-12 text-[#3A5A40]" />
+                    <Activity className="w-12 h-12 text-[#3A5A40]" />
                   </div>
                   <div>
                     <h2 className="text-3xl font-serif font-bold text-[#3A5A40] mb-2">{t('swastha')}</h2>
@@ -1225,7 +1188,7 @@ export default function HealthcareChat() {
 
                     >
                       {msg.role === 'assistant' ? (
-                        <Leaf className="w-4 h-4 sm:w-5 sm:h-5 text-[#3A5A40]" />
+                        <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-[#3A5A40]" />
                       ) : userProfile?.photo_url ? (
                         <Image
                           src={userProfile.photo_url}
@@ -1296,7 +1259,7 @@ export default function HealthcareChat() {
                 <div className="flex justify-start">
                   <div className="flex gap-4 max-w-[80%]">
                     <div className="w-10 h-10 rounded-full bg-[#E0E5D9] flex items-center justify-center shrink-0">
-                      <Leaf className="w-5 h-5 text-[#3A5A40]" />
+                      <Activity className="w-5 h-5 text-[#3A5A40]" />
                     </div>
                     <div className="bg-white p-4 rounded-2xl rounded-tl-none border border-stone-100 shadow-sm flex items-center gap-3">
                       <Loader2 className="w-5 h-5 animate-spin text-[#3A5A40]" />
