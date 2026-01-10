@@ -1128,9 +1128,9 @@ export default function HealthcareChat() {
           {/* Footer */}
           <div className="p-4 border-t-2 border-white/20 bg-[#334f38] space-y-2">
 
-            {/* NEW: Discharge Simplifier Button */}
+            {/* NEW: Recovery Plans Button */}
             <button
-              onClick={() => router.push('/discharge')}
+              onClick={() => router.push(`/${locale}/recovery-plans`)}
               className="w-full flex items-center gap-3 text-stone-300 hover:text-white hover:bg-white/10 px-4 py-3 transition-colors text-sm font-medium"
               style={{
                 borderRadius: '225px 15px 225px 15px/15px 255px 15px 225px',
@@ -1147,9 +1147,9 @@ export default function HealthcareChat() {
                 className="w-6 h-6 bg-white/20 flex items-center justify-center"
                 style={{ borderRadius: '15px 5px 15px 5px/5px 15px 5px 15px' }}
               >
-                <FileText className="w-4 h-4" />
+                📋
               </div>
-              Discharge Simplifier
+              Recovery Plans
             </button>
 
             {/* NEW: Profile Button */}
@@ -1553,19 +1553,6 @@ export default function HealthcareChat() {
                 title="Upload medical document"
               >
                 <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-
-              <button
-                onClick={() => window.location.href = `/${locale}/recovery-plans`}
-                className="p-3 sm:p-4 bg-purple-100 hover:bg-purple-200 text-purple-700 transition-all active:scale-95"
-                style={{
-                  borderRadius: '255px 15px 225px 15px/15px 225px 15px 255px',
-                  border: '3px solid #c4b5fd',
-                  boxShadow: '3px 3px 0px rgba(0,0,0,0.1)'
-                }}
-                title="View recovery plans"
-              >
-                <span className="text-base sm:text-lg">📋</span>
               </button>
 
               <VoiceRecorder
